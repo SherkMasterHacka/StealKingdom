@@ -1,0 +1,10 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find C:UsersUsErDesktopStealKingodmWebsite -type f -name *.md)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(where npm:*)",
+      "Bash(npm install:*)"
+    ]
+  }
+}
