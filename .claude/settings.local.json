@@ -4,7 +4,11 @@
       "Bash(find C:UsersUsErDesktopStealKingodmWebsite -type f -name *.md)",
       "mcp__Claude_Preview__preview_start",
       "Bash(where npm:*)",
-      "Bash(npm install:*)"
+      "Bash(npm install:*)",
+      "Bash(where npx:*)",
+      "Bash(where node:*)",
+      "Bash(taskkill /PID 36492 /F)",
+      "Bash(taskkill //PID 36492 //F)"
     ]
   }
 }
