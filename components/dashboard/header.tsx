@@ -67,6 +67,7 @@ export function DashboardHeader() {
   const roleColors: Record<string, string> = {
     owner: 'bg-amber-500/10 text-amber-500 border-amber-500/20',
     admin: 'bg-destructive/10 text-destructive border-destructive/20',
+    developer: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
     member: 'bg-primary/10 text-primary border-primary/20',
     viewer: 'bg-muted text-muted-foreground border-border',
   }

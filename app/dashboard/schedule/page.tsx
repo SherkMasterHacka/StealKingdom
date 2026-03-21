@@ -55,7 +55,7 @@ interface ScheduleItem {
   updated_at: string
 }
 
-const fetcher = (url: string) => fetch(url).then((res) => res.json())
+const fetcher = (url: string) => fetch(url).then((res) => res.json()).then((data) => Array.isArray(data) ? data : [])
 
 const priorityColors = {
   low: 'text-muted-foreground',

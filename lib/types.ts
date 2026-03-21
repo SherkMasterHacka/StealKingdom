@@ -1,4 +1,4 @@
-export type UserRole = 'owner' | 'admin' | 'member' | 'viewer'
+export type UserRole = 'owner' | 'admin' | 'developer' | 'member' | 'viewer'
 
 export type TaskCategory = 'model' | 'animation' | 'sound' | 'vfx' | 'ui' | 'programming' | 'rigger'
 
@@ -123,14 +123,16 @@ export const STATUS_COLORS: Record<TaskStatus, string> = {
 export const ROLE_COLORS: Record<UserRole, string> = {
   owner: 'bg-amber-500/10 text-amber-500',
   admin: 'bg-red-500/10 text-red-500',
+  developer: 'bg-emerald-500/10 text-emerald-500',
   member: 'bg-blue-500/10 text-blue-500',
   viewer: 'bg-muted text-muted-foreground',
 }
 
 // Role permission helpers
 export const ROLE_HIERARCHY: Record<UserRole, number> = {
-  owner: 4,
-  admin: 3,
+  owner: 5,
+  admin: 4,
+  developer: 3,
   member: 2,
   viewer: 1,
 }
@@ -141,12 +143,12 @@ export function hasPermission(userRole: UserRole, requiredRole: UserRole): boole
 
 export function canManageRole(managerRole: UserRole, targetRole: UserRole): boolean {
   if (managerRole === 'owner') return targetRole !== 'owner'
-  if (managerRole === 'admin') return targetRole === 'member' || targetRole === 'viewer'
+  if (managerRole === 'admin') return targetRole === 'developer' || targetRole === 'member' || targetRole === 'viewer'
   return false
 }
 
 export function getAvailableRolesForManager(managerRole: UserRole): UserRole[] {
-  if (managerRole === 'owner') return ['admin', 'member', 'viewer']
-  if (managerRole === 'admin') return ['member', 'viewer']
+  if (managerRole === 'owner') return ['admin', 'developer', 'member', 'viewer']
+  if (managerRole === 'admin') return ['developer', 'member', 'viewer']
   return []
 }

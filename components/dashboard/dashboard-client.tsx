@@ -58,8 +58,8 @@ export function DashboardClient({ currentUser, initialTasks, members }: Dashboar
     }
   }, [tasks, handleTaskUpdated])
 
-  const canCreateTasks = currentUser.role === 'admin'
-  const canEditTasks = currentUser.role === 'admin' || currentUser.role === 'member'
+  const canCreateTasks = currentUser.role === 'admin' || currentUser.role === 'owner' || currentUser.role === 'developer'
+  const canEditTasks = currentUser.role === 'admin' || currentUser.role === 'owner' || currentUser.role === 'member' || currentUser.role === 'developer'
 
   return (
     <div className="flex h-screen bg-background">

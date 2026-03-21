@@ -53,6 +53,7 @@ function TasksContent() {
   })
 
   const isAdmin = profile?.role === 'owner' || profile?.role === 'admin'
+  const canCreate = isAdmin || profile?.role === 'developer'
 
   return (
     <div className="space-y-6">
@@ -63,7 +64,7 @@ function TasksContent() {
             Manage and track all game development tasks
           </p>
         </div>
-        {isAdmin && (
+        {canCreate && (
           <Button onClick={() => setCreateOpen(true)}>
             <Plus className="h-4 w-4 mr-2" />
             New Task

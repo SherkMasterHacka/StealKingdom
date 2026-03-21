@@ -78,3 +78,26 @@ CREATE TRIGGER update_schedule_items_updated_at
   BEFORE UPDATE ON public.schedule_items
   FOR EACH ROW
   EXECUTE FUNCTION public.update_updated_at_column();
+
+-- 7. Add 'developer' role to profiles constraint
+ALTER TABLE public.profiles DROP CONSTRAINT IF EXISTS profiles_role_check;
+ALTER TABLE public.profiles ADD CONSTRAINT profiles_role_check
+  CHECK (role IN ('owner', 'admin', 'developer', 'member', 'viewer'));
+
+-- 8. Update tasks insert policy to allow developers to create tasks
+DROP POLICY IF EXISTS "tasks_insert_admin" ON public.tasks;
+CREATE POLICY "tasks_insert_admin_or_developer" ON public.tasks FOR INSERT WITH CHECK (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin', 'developer'))
+);
+
+-- 9. Update tasks update policy to allow developers
+DROP POLICY IF EXISTS "tasks_update_member_or_admin" ON public.tasks;
+CREATE POLICY "tasks_update_member_or_admin" ON public.tasks FOR UPDATE USING (
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin', 'developer', 'member'))
+);
+
+-- 10. Allow schedule_items insert for auto-assign (service role handles this)
+-- Update schedule_items insert policy to also allow authenticated users to insert for themselves
+DROP POLICY IF EXISTS "schedule_items_insert_own" ON public.schedule_items;
+CREATE POLICY "schedule_items_insert_authenticated" ON public.schedule_items FOR INSERT
+  WITH CHECK (auth.uid() IS NOT NULL);
