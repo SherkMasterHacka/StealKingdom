@@ -89,6 +89,8 @@ export function TaskDetailPanel({
   const { data: files, mutate: mutateFiles } = useSWR<TaskFile[]>(`/api/tasks/${task.id}/files`, fetcher)
 
   const isAdmin = currentUser.role === 'owner' || currentUser.role === 'admin'
+  const isDeveloper = currentUser.role === 'developer'
+  const canUploadFiles = isAdmin || isDeveloper || currentUser.role === 'member'
   const canApproveReject = isAdmin && task.status === 'review'
 
   const handleSave = async () => {
@@ -230,45 +232,79 @@ export function TaskDetailPanel({
     }
   }
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const [isDragging, setIsDragging] = useState(false)
 
+  const uploadFile = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
+
+    const uploadResponse = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    })
+
+    if (!uploadResponse.ok) throw new Error('Upload failed')
+
+    const uploadData = await uploadResponse.json()
+
+    const fileResponse = await fetch(`/api/tasks/${task.id}/files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        file_name: uploadData.file_name,
+        file_url: uploadData.pathname,
+        file_size: uploadData.file_size,
+        file_type: uploadData.file_type,
+      }),
+    })
+
+    if (!fileResponse.ok) throw new Error('Failed to save file')
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files
+    if (!fileList || fileList.length === 0) return
+    await handleFiles(Array.from(fileList))
+    e.target.value = ''
+  }
+
+  const handleFiles = async (fileList: File[]) => {
     setIsUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-
-      const uploadResponse = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-
-      if (!uploadResponse.ok) throw new Error('Upload failed')
-
-      const uploadData = await uploadResponse.json()
-
-      const fileResponse = await fetch(`/api/tasks/${task.id}/files`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          file_name: uploadData.file_name,
-          file_url: uploadData.pathname,
-          file_size: uploadData.file_size,
-          file_type: uploadData.file_type,
-        }),
-      })
-
-      if (!fileResponse.ok) throw new Error('Failed to save file')
-
+      for (const file of fileList) {
+        await uploadFile(file)
+      }
       mutateFiles()
-      toast.success('File uploaded')
+      toast.success(fileList.length > 1 ? `${fileList.length} files uploaded` : 'File uploaded')
     } catch {
       toast.error('Failed to upload file')
     } finally {
       setIsUploading(false)
-      e.target.value = ''
     }
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (canUploadFiles) setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+
+    if (!canUploadFiles) return
+
+    const droppedFiles = Array.from(e.dataTransfer.files)
+    if (droppedFiles.length === 0) return
+    await handleFiles(droppedFiles)
   }
 
   const categoryConfig = CATEGORIES.find(c => c.value === task.category)
@@ -519,9 +555,9 @@ export function TaskDetailPanel({
                 <Paperclip className="h-4 w-4" />
                 Files ({files?.length || 0})
               </h3>
-              {canEditTasks && (
+              {canUploadFiles && (
                 <label className="cursor-pointer">
-                  <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} />
+                  <input type="file" className="hidden" onChange={handleFileUpload} disabled={isUploading} multiple />
                   <Button variant="ghost" size="sm" disabled={isUploading} asChild>
                     <span>
                       {isUploading ? <Spinner className="h-4 w-4" /> : <Upload className="h-4 w-4" />}
@@ -530,6 +566,46 @@ export function TaskDetailPanel({
                 </label>
               )}
             </div>
+
+            {/* Drag & Drop Zone */}
+            {canUploadFiles && (
+              <div
+                onDragOver={handleDragOver}
+                onDragLeave={handleDragLeave}
+                onDrop={handleDrop}
+                className={cn(
+                  "border-2 border-dashed rounded-lg p-4 text-center transition-all duration-200 cursor-pointer",
+                  isDragging
+                    ? "border-primary bg-primary/10 scale-[1.02]"
+                    : "border-muted-foreground/20 hover:border-muted-foreground/40"
+                )}
+                onClick={() => {
+                  const input = document.createElement('input')
+                  input.type = 'file'
+                  input.multiple = true
+                  input.onchange = (e) => {
+                    const files = (e.target as HTMLInputElement).files
+                    if (files) handleFiles(Array.from(files))
+                  }
+                  input.click()
+                }}
+              >
+                {isUploading ? (
+                  <div className="flex items-center justify-center gap-2 text-sm text-muted-foreground">
+                    <Spinner className="h-4 w-4" />
+                    กำลังอัปโหลด...
+                  </div>
+                ) : isDragging ? (
+                  <p className="text-sm text-primary font-medium">ปล่อยไฟล์ที่นี่</p>
+                ) : (
+                  <div className="text-sm text-muted-foreground">
+                    <Upload className="h-5 w-5 mx-auto mb-1 opacity-50" />
+                    <p>ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก</p>
+                  </div>
+                )}
+              </div>
+            )}
+
             {files && files.length > 0 ? (
               <div className="space-y-2">
                 {Object.entries(groupedFiles || {}).map(([baseName, versions]) => (
