@@ -1,6 +1,6 @@
 export type UserRole = 'owner' | 'admin' | 'member' | 'viewer'
 
-export type TaskCategory = 'model' | 'animation' | 'sound' | 'vfx' | 'ui' | 'programming'
+export type TaskCategory = 'model' | 'animation' | 'sound' | 'vfx' | 'ui' | 'programming' | 'rigger'
 
 export type TaskStatus = 'pending' | 'in_progress' | 'review' | 'approved' | 'rejected' | 'completed'
 
@@ -93,6 +93,7 @@ export const CATEGORIES: { value: TaskCategory; label: string; color: string }[]
   { value: 'vfx', label: 'VFX', color: 'bg-pink-500' },
   { value: 'ui', label: 'UI', color: 'bg-cyan-500' },
   { value: 'programming', label: 'Programming', color: 'bg-yellow-500' },
+  { value: 'rigger', label: 'Rigger', color: 'bg-purple-500' },
 ]
 
 export const STATUSES: { value: TaskStatus; label: string }[] = [

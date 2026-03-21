@@ -20,6 +20,8 @@ import {
   Monitor,
   Code,
   Settings,
+  Bone,
+  CalendarDays,
 } from 'lucide-react'
 
 const categoryIcons: Record<string, React.ReactNode> = {
@@ -29,6 +31,7 @@ const categoryIcons: Record<string, React.ReactNode> = {
   vfx: <Sparkles className="h-4 w-4" />,
   ui: <Monitor className="h-4 w-4" />,
   programming: <Code className="h-4 w-4" />,
+  rigger: <Bone className="h-4 w-4" />,
 }
 
 export function DashboardSidebar() {
@@ -41,6 +44,7 @@ export function DashboardSidebar() {
     { href: '/dashboard', label: 'Dashboard', icon: <LayoutDashboard className="h-4 w-4" /> },
     { href: '/dashboard/tasks', label: 'All Tasks', icon: <ListTodo className="h-4 w-4" /> },
     { href: '/dashboard/activity', label: 'Activity', icon: <Activity className="h-4 w-4" /> },
+    { href: '/dashboard/schedule', label: 'My Schedule', icon: <CalendarDays className="h-4 w-4" /> },
   ]
 
   const adminNav = [

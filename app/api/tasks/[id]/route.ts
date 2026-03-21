@@ -156,7 +156,7 @@ export async function PATCH(
     }
   }
 
-  // Notify new assignee when task is assigned
+  // Notify new assignee when task is assigned and auto-add to their schedule
   if (updateData.assigned_to && oldTask && updateData.assigned_to !== oldTask.assigned_to && updateData.assigned_to !== user.id) {
     await supabase.from('notifications').insert({
       user_id: updateData.assigned_to,
@@ -165,6 +165,26 @@ export async function PATCH(
       message: `You have been assigned to "${oldTask.title}".`,
       task_id: id,
     })
+
+    // Auto-add to assignee's schedule
+    // Check if not already in schedule
+    const { data: existingSchedule } = await supabase
+      .from('schedule_items')
+      .select('id')
+      .eq('user_id', updateData.assigned_to)
+      .eq('task_id', id)
+      .maybeSingle()
+
+    if (!existingSchedule) {
+      await supabase.from('schedule_items').insert({
+        user_id: updateData.assigned_to,
+        title: oldTask.title,
+        description: `Assigned task: ${oldTask.title}`,
+        due_date: data?.due_date || oldTask.due_date || null,
+        priority: data?.priority || oldTask.priority || 'medium',
+        task_id: id,
+      })
+    }
   }
 
   return NextResponse.json(data)

@@ -83,5 +83,28 @@ export async function POST(request: NextRequest) {
     details: { title: body.title, category: body.category },
   })
 
+  // Auto-add to assignee's schedule when task is created with an assignee
+  if (body.assigned_to) {
+    await supabase.from('schedule_items').insert({
+      user_id: body.assigned_to,
+      title: body.title,
+      description: `Assigned task: ${body.title}`,
+      due_date: body.due_date || null,
+      priority: body.priority || 'medium',
+      task_id: data.id,
+    })
+
+    // Notify assignee
+    if (body.assigned_to !== user.id) {
+      await supabase.from('notifications').insert({
+        user_id: body.assigned_to,
+        type: 'task_assigned',
+        title: 'Task Assigned',
+        message: `You have been assigned to "${body.title}".`,
+        task_id: data.id,
+      })
+    }
+  }
+
   return NextResponse.json(data)
 }
