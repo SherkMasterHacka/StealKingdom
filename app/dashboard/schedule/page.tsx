@@ -414,25 +414,13 @@ export default function SchedulePage() {
                   return (
                     <div
                       key={item.id}
-                      className={`flex items-start gap-3 p-4 rounded-lg border transition-colors hover:bg-accent/50 cursor-pointer ${
+                      className={`relative flex items-start gap-3 p-4 pb-10 rounded-lg border transition-colors hover:bg-accent/50 cursor-pointer ${
                         item.completed ? 'opacity-50' : ''
                       } ${isOverdue ? 'border-red-500/30' : 'border-border'}`}
+                      onClick={() => openEditDialog(item)}
                     >
-                      {/* Toggle complete button */}
-                      <button
-                        onClick={(e) => { e.stopPropagation(); handleToggleComplete(item) }}
-                        className="mt-0.5 shrink-0"
-                        title={item.completed ? 'ยังไม่เสร็จ' : 'เสร็จแล้ว'}
-                      >
-                        {item.completed ? (
-                          <CheckCircle2 className="h-5 w-5 text-green-500" />
-                        ) : (
-                          <Circle className={`h-5 w-5 ${priorityColors[item.priority]}`} />
-                        )}
-                      </button>
-
-                      {/* Content - clickable to edit */}
-                      <div className="flex-1 min-w-0" onClick={() => openEditDialog(item)}>
+                      {/* Content */}
+                      <div className="flex-1 min-w-0">
                         <p className={`font-medium ${item.completed ? 'line-through text-muted-foreground' : ''}`}>
                           {item.title}
                         </p>
@@ -463,7 +451,7 @@ export default function SchedulePage() {
                         </div>
                       </div>
 
-                      {/* Edit & Delete buttons */}
+                      {/* Edit & Delete buttons - top right */}
                       <div className="flex items-center gap-1 shrink-0">
                         <button
                           onClick={(e) => { e.stopPropagation(); openEditDialog(item) }}
@@ -480,6 +468,19 @@ export default function SchedulePage() {
                           <Trash2 className="h-4 w-4" />
                         </button>
                       </div>
+
+                      {/* Toggle complete button - bottom right */}
+                      <button
+                        onClick={(e) => { e.stopPropagation(); handleToggleComplete(item) }}
+                        className="absolute bottom-3 right-3 p-1.5 rounded-full transition-all duration-200 hover:scale-125 hover:bg-accent active:scale-95"
+                        title={item.completed ? 'ทำเครื่องหมายยังไม่เสร็จ' : 'ทำเครื่องหมายเสร็จแล้ว'}
+                      >
+                        {item.completed ? (
+                          <CheckCircle2 className="h-6 w-6 text-green-500 transition-colors" />
+                        ) : (
+                          <Circle className="h-6 w-6 text-gray-400 hover:text-green-400 transition-colors" />
+                        )}
+                      </button>
                     </div>
                   )
                 })}
