@@ -37,7 +37,7 @@ import {
 } from '@/components/ui/dialog'
 import { Field, FieldLabel } from '@/components/ui/field'
 import { format } from 'date-fns'
-import { Users, Crown, Shield, UserCheck, Eye, KeyRound } from 'lucide-react'
+import { Users, Crown, Shield, UserCheck, Eye, KeyRound, Code } from 'lucide-react'
 import { toast } from 'sonner'
 
 const fetcher = (url: string) => fetch(url).then((res) => res.json())
@@ -52,6 +52,11 @@ const roleConfig: Record<UserRole, { label: string; color: string; icon: React.R
     label: 'Admin',
     color: 'bg-destructive/10 text-destructive border-destructive/20',
     icon: <Shield className="h-4 w-4" />,
+  },
+  developer: {
+    label: 'Developer',
+    color: 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+    icon: <Code className="h-4 w-4" />,
   },
   member: {
     label: 'Member',
@@ -171,6 +176,7 @@ export default function TeamPage() {
     total: profiles?.length || 0,
     owners: profiles?.filter((p) => p.role === 'owner').length || 0,
     admins: profiles?.filter((p) => p.role === 'admin').length || 0,
+    developers: profiles?.filter((p) => p.role === 'developer').length || 0,
     members: profiles?.filter((p) => p.role === 'member').length || 0,
     viewers: profiles?.filter((p) => p.role === 'viewer').length || 0,
   }
@@ -286,7 +292,7 @@ export default function TeamPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
             <div className="p-4 rounded-lg border border-amber-500/20 bg-amber-500/5">
               <div className="flex items-center gap-2 mb-3">
                 <Crown className="h-5 w-5 text-amber-500" />
@@ -309,6 +315,18 @@ export default function TeamPage() {
                 <li>Manage Members and Viewers</li>
                 <li>Change Member/Viewer passwords</li>
                 <li>Approve/reject tasks</li>
+              </ul>
+            </div>
+            <div className="p-4 rounded-lg border border-emerald-500/20 bg-emerald-500/5">
+              <div className="flex items-center gap-2 mb-3">
+                <Code className="h-5 w-5 text-emerald-500" />
+                <span className="font-medium">Developer</span>
+              </div>
+              <ul className="text-sm text-muted-foreground space-y-1">
+                <li>Create tasks (auto-assigned to self)</li>
+                <li>Upload files to tasks</li>
+                <li>Add comments</li>
+                <li>Cannot set due date or assign others</li>
               </ul>
             </div>
             <div className="p-4 rounded-lg border border-border">
