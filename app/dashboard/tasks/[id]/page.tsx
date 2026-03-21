@@ -52,7 +52,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   const [deleting, setDeleting] = useState(false)
 
   const isAdmin = profile?.role === 'owner' || profile?.role === 'admin'
-  const isMember = profile?.role === 'owner' || profile?.role === 'admin' || profile?.role === 'member'
+  const isMember = profile?.role === 'owner' || profile?.role === 'admin' || profile?.role === 'member' || profile?.role === 'developer'
+  const [isDragging, setIsDragging] = useState(false)
 
   const category = CATEGORIES.find((c) => c.value === task?.category)
   const status = STATUSES.find((s) => s.value === task?.status)
@@ -125,29 +126,72 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
     }
   }
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0]
-    if (!file) return
+  const uploadFile = async (file: File) => {
+    const formData = new FormData()
+    formData.append('file', file)
 
+    const uploadResponse = await fetch('/api/upload', {
+      method: 'POST',
+      body: formData,
+    })
+    if (!uploadResponse.ok) throw new Error('Upload failed')
+    const uploadData = await uploadResponse.json()
+
+    const fileResponse = await fetch(`/api/tasks/${id}/files`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        file_name: uploadData.file_name,
+        file_url: uploadData.pathname,
+        file_size: uploadData.file_size,
+        file_type: uploadData.file_type,
+      }),
+    })
+    if (!fileResponse.ok) throw new Error('Failed to save file')
+  }
+
+  const handleFiles = async (fileList: File[]) => {
     setUploading(true)
     try {
-      const formData = new FormData()
-      formData.append('file', file)
-      formData.append('taskId', id)
-
-      const response = await fetch('/api/upload', {
-        method: 'POST',
-        body: formData,
-      })
-      if (!response.ok) throw new Error('Failed to upload file')
+      for (const file of fileList) {
+        await uploadFile(file)
+      }
       mutate()
-      toast.success('File uploaded')
+      toast.success(fileList.length > 1 ? `${fileList.length} files uploaded` : 'File uploaded')
     } catch {
       toast.error('Failed to upload file')
     } finally {
       setUploading(false)
-      e.target.value = ''
     }
+  }
+
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const fileList = e.target.files
+    if (!fileList || fileList.length === 0) return
+    await handleFiles(Array.from(fileList))
+    e.target.value = ''
+  }
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    if (isMember) setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+  }
+
+  const handleDrop = async (e: React.DragEvent) => {
+    e.preventDefault()
+    e.stopPropagation()
+    setIsDragging(false)
+    if (!isMember) return
+    const droppedFiles = Array.from(e.dataTransfer.files)
+    if (droppedFiles.length === 0) return
+    await handleFiles(droppedFiles)
   }
 
   const handleDelete = async () => {
@@ -263,6 +307,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                       className="hidden"
                       onChange={handleFileUpload}
                       disabled={uploading}
+                      multiple
                     />
                     <Button
                       variant="outline"
@@ -278,6 +323,24 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
               </div>
             </CardHeader>
             <CardContent>
+              {isMember && (
+                <div
+                  onDragOver={handleDragOver}
+                  onDragLeave={handleDragLeave}
+                  onDrop={handleDrop}
+                  onClick={() => document.getElementById('file-upload')?.click()}
+                  className={`mb-4 border-2 border-dashed rounded-lg p-6 text-center cursor-pointer transition-all ${
+                    isDragging
+                      ? 'border-primary bg-primary/10 scale-[1.02]'
+                      : 'border-muted-foreground/25 hover:border-muted-foreground/50'
+                  }`}
+                >
+                  <Upload className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
+                  <p className="text-sm text-muted-foreground">
+                    ลากไฟล์มาวางที่นี่ หรือคลิกเพื่อเลือก
+                  </p>
+                </div>
+              )}
               {task.files && task.files.length > 0 ? (
                 <div className="space-y-2">
                   {task.files.map((file) => (
@@ -290,7 +353,7 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
                         <div className="min-w-0">
                           <p className="text-sm font-medium truncate">{file.file_name}</p>
                           <p className="text-xs text-muted-foreground">
-                            {file.file_size ? `${Math.round(file.file_size / 1024)} KB` : ''} 
+                            {file.file_size ? `${Math.round(file.file_size / 1024)} KB` : ''}
                             {file.uploader && ` • Uploaded by ${file.uploader.display_name || file.uploader.username}`}
                           </p>
                         </div>
