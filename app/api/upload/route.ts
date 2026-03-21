@@ -1,10 +1,11 @@
-import { handleUpload, type HandleUploadBody } from '@vercel/blob/client'
+import { put } from '@vercel/blob'
 import { NextResponse, type NextRequest } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 
-export async function POST(request: NextRequest) {
-  const body = (await request.json()) as HandleUploadBody
+// Use edge runtime to bypass the 4.5MB body limit of serverless functions
+export const runtime = 'edge'
 
+export async function POST(request: NextRequest) {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -13,23 +14,27 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const jsonResponse = await handleUpload({
-      body,
-      request,
-      onBeforeGenerateToken: async () => {
-        return {
-          allowedContentTypes: undefined, // allow all
-          maximumSizeInBytes: 50 * 1024 * 1024, // 50MB
-        }
-      },
-      onUploadCompleted: async () => {
-        // Nothing needed here - file registration happens client-side via /api/tasks/[id]/files
-      },
+    const formData = await request.formData()
+    const file = formData.get('file') as File
+
+    if (!file) {
+      return NextResponse.json({ error: 'No file provided' }, { status: 400 })
+    }
+
+    // Upload to Vercel Blob
+    const blob = await put(`uploads/${file.name}`, file, {
+      access: 'public',
     })
 
-    return NextResponse.json(jsonResponse)
+    return NextResponse.json({
+      pathname: blob.pathname,
+      url: blob.url,
+      file_name: file.name,
+      file_size: file.size,
+      file_type: file.type,
+    })
   } catch (error) {
     console.error('Upload error:', error)
-    return NextResponse.json({ error: 'Upload failed' }, { status: 400 })
+    return NextResponse.json({ error: 'Upload failed' }, { status: 500 })
   }
 }
