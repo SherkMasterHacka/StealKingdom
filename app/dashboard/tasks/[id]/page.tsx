@@ -127,24 +127,20 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   const uploadFile = async (file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-
-    const uploadResponse = await fetch('/api/upload', {
-      method: 'POST',
-      body: formData,
+    const { upload } = await import('@vercel/blob/client')
+    const blob = await upload(file.name, file, {
+      access: 'public',
+      handleUploadUrl: '/api/upload',
     })
-    if (!uploadResponse.ok) throw new Error('Upload failed')
-    const uploadData = await uploadResponse.json()
 
     const fileResponse = await fetch(`/api/tasks/${id}/files`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        file_name: uploadData.file_name,
-        file_url: uploadData.pathname,
-        file_size: uploadData.file_size,
-        file_type: uploadData.file_type,
+        file_name: file.name,
+        file_url: blob.pathname,
+        file_size: file.size,
+        file_type: file.type,
       }),
     })
     if (!fileResponse.ok) throw new Error('Failed to save file')
