@@ -86,7 +86,7 @@ CREATE POLICY "tasks_delete_admin" ON public.tasks FOR DELETE USING (
 -- Task files policies
 CREATE POLICY "task_files_select_all" ON public.task_files FOR SELECT USING (true);
 CREATE POLICY "task_files_insert_member_or_admin" ON public.task_files FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin', 'member'))
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin', 'developer', 'member'))
 );
 CREATE POLICY "task_files_delete_admin" ON public.task_files FOR DELETE USING (
   EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin'))
@@ -95,7 +95,7 @@ CREATE POLICY "task_files_delete_admin" ON public.task_files FOR DELETE USING (
 -- Comments policies
 CREATE POLICY "comments_select_all" ON public.comments FOR SELECT USING (true);
 CREATE POLICY "comments_insert_member_or_admin" ON public.comments FOR INSERT WITH CHECK (
-  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin', 'member'))
+  EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role IN ('owner', 'admin', 'developer', 'member'))
 );
 CREATE POLICY "comments_update_own" ON public.comments FOR UPDATE USING (auth.uid() = user_id);
 CREATE POLICY "comments_delete_own_or_admin" ON public.comments FOR DELETE USING (
