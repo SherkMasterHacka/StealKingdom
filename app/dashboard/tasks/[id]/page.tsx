@@ -134,8 +134,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       method: 'POST',
       body: formData,
     })
-    if (!uploadResponse.ok) throw new Error('Upload failed')
     const uploadData = await uploadResponse.json()
+    if (!uploadResponse.ok) throw new Error(uploadData.error || 'Upload failed')
 
     const fileResponse = await fetch(`/api/tasks/${id}/files`, {
       method: 'POST',
@@ -158,8 +158,8 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       }
       mutate()
       toast.success(fileList.length > 1 ? `${fileList.length} files uploaded` : 'File uploaded')
-    } catch {
-      toast.error('Failed to upload file')
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to upload file')
     } finally {
       setUploading(false)
     }
