@@ -1,6 +1,6 @@
 'use client'
 
-import { use, useState, useCallback } from 'react'
+import { use, useState, useCallback, useRef } from 'react'
 import { useRouter } from 'next/navigation'
 import useSWR from 'swr'
 import { useAuth } from '@/lib/auth-context'
@@ -127,17 +127,23 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
   }
 
   const uploadFile = async (file: File) => {
-    const formData = new FormData()
-    formData.append('file', file)
-
+    // Stream file directly to edge function (no 4.5MB limit)
     const uploadResponse = await fetch('/api/upload', {
       method: 'POST',
-      body: formData,
+      headers: {
+        'x-file-name': encodeURIComponent(file.name),
+        'x-file-type': file.type,
+        'x-file-size': String(file.size),
+      },
+      body: file,
+      // @ts-ignore - duplex needed for streaming body
+      duplex: 'half',
     })
     if (!uploadResponse.ok) {
-      if (uploadResponse.status === 413) throw new Error('ไฟล์ใหญ่เกินไป (สูงสุด 4.5MB)')
       const text = await uploadResponse.text()
-      try { throw new Error(JSON.parse(text).error) } catch { throw new Error(text || 'Upload failed') }
+      let msg = 'Upload failed'
+      try { msg = JSON.parse(text).error || msg } catch {}
+      throw new Error(msg)
     }
     const uploadData = await uploadResponse.json()
 
@@ -151,7 +157,10 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
         file_type: uploadData.file_type,
       }),
     })
-    if (!fileResponse.ok) throw new Error('Failed to save file')
+    if (!fileResponse.ok) {
+      const text = await fileResponse.text()
+      throw new Error(text || 'Failed to save file')
+    }
   }
 
   const handleFiles = async (fileList: File[]) => {
