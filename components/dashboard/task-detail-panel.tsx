@@ -242,7 +242,11 @@ export function TaskDetailPanel({
       method: 'POST',
       body: formData,
     })
-    if (!uploadResponse.ok) throw new Error('Upload failed')
+    if (!uploadResponse.ok) {
+      if (uploadResponse.status === 413) throw new Error('ไฟล์ใหญ่เกินไป (สูงสุด 4.5MB)')
+      const text = await uploadResponse.text()
+      try { throw new Error(JSON.parse(text).error) } catch { throw new Error(text || 'Upload failed') }
+    }
     const uploadData = await uploadResponse.json()
 
     const fileResponse = await fetch(`/api/tasks/${task.id}/files`, {

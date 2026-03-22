@@ -134,8 +134,12 @@ export default function TaskDetailPage({ params }: { params: Promise<{ id: strin
       method: 'POST',
       body: formData,
     })
+    if (!uploadResponse.ok) {
+      if (uploadResponse.status === 413) throw new Error('ไฟล์ใหญ่เกินไป (สูงสุด 4.5MB)')
+      const text = await uploadResponse.text()
+      try { throw new Error(JSON.parse(text).error) } catch { throw new Error(text || 'Upload failed') }
+    }
     const uploadData = await uploadResponse.json()
-    if (!uploadResponse.ok) throw new Error(uploadData.error || 'Upload failed')
 
     const fileResponse = await fetch(`/api/tasks/${id}/files`, {
       method: 'POST',
